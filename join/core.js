@@ -107,6 +107,18 @@ export function categoryOf(item) {
   return found ?? LEGACY[item.g] ?? 'misc';
 }
 
+/** Names from the dictionary that start with what is typed, to offer while adding (the same rule as the app). */
+export function suggestItems(query, limit = 5) {
+  const q = String(query ?? '').trim();
+  if (!q) return [];
+  const out = [];
+  for (const name of BY_NAME.keys()) {
+    if (name.startsWith(q) && name !== q) out.push(name);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 /** Categories that have at least one item, in the app's order; open items first, bought ones after. */
 export function groupItems(items) {
   const groups = [];

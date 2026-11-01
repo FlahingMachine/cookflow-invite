@@ -18,6 +18,7 @@ import {
   finishedOf,
   finishedSentence,
   parseShekels,
+  suggestItems,
 } from './core.js';
 
 const LIST_KEY = 'cookflow.guest.list.v1';
@@ -92,8 +93,48 @@ function hideToast() {
   toastEl.hidden = true;
 }
 
+// --- light / dark -----------------------------------------------------------------------------------------------------
+const THEME_KEY = 'cookflow.guest.theme.v1';
+const systemDark = () =>
+  window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+function applyTheme(mode) {
+  if (mode === 'light' || mode === 'dark') document.documentElement.dataset.theme = mode;
+  else delete document.documentElement.dataset.theme;
+}
+const isDark = () => {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === 'dark' : systemDark();
+};
+applyTheme(keep(THEME_KEY));
+function themeButton() {
+  const btn = h('button', {
+    type: 'button',
+    class: 'theme',
+    'aria-label': 'החלפה בין מצב כהה למצב בהיר',
+  });
+  const paint = () => {
+    btn.textContent = isDark() ? '☀ מצב בהיר' : '☾ מצב כהה';
+  };
+  btn.addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    put(THEME_KEY, next);
+    applyTheme(next);
+    document.querySelectorAll('button.theme').forEach((b) => b.dispatchEvent(new Event('repaint')));
+    paint();
+  });
+  btn.addEventListener('repaint', paint);
+  paint();
+  return btn;
+}
+
 const brandline = () =>
-  h('div', { class: 'brandline' }, h('span', { class: 'dot' }), 'CookFlow · רשימת קניות משותפת');
+  h(
+    'div',
+    { class: 'brandline' },
+    h('span', { class: 'dot' }),
+    h('span', { class: 'grow' }, 'CookFlow · רשימת קניות משותפת'),
+    themeButton(),
+  );
 
 // --- state -----------------------------------------------------------------------------------------------------------
 const clientId = keep(CLIENT_KEY) || makeId('w');
@@ -286,6 +327,8 @@ function buildListScreen() {
     'aria-label': 'מוצר חדש לרשימה',
     autocomplete: 'off',
   });
+  ui.suggest = h('div', { class: 'chips', 'aria-label': 'הצעות' });
+  ui.addName.addEventListener('input', paintSuggestions);
   ui.add = h(
     'form',
     {
@@ -312,7 +355,7 @@ function buildListScreen() {
     h('div', { class: 'row spread' }, ui.status, ui.progressText),
     h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'התקדמות הקנייה' }, ui.bar),
     canEdit()
-      ? ui.add
+      ? h('div', { class: 'addblock' }, ui.add, ui.suggest)
       : h(
           'p',
           { class: 'notice' },
@@ -339,6 +382,28 @@ function buildListScreen() {
         h('button', { type: 'button', class: 'danger', onclick: leaveList }, 'יציאה מהרשימה'),
       ),
       h('p', { class: 'muted' }, 'הגישה נשמרת בדפדפן הזה. אחרי יציאה צריך הזמנה חדשה כדי לחזור.'),
+    ),
+  );
+}
+
+/** Dictionary names that start with what is typed; a tap puts the name in the box, like the app. */
+function paintSuggestions() {
+  if (!ui.suggest) return;
+  ui.suggest.replaceChildren(
+    ...suggestItems(ui.addName.value).map((name) =>
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'chip',
+          onclick: () => {
+            ui.addName.value = name;
+            ui.addName.focus();
+            paintSuggestions();
+          },
+        },
+        name,
+      ),
     ),
   );
 }
@@ -440,6 +505,7 @@ function addItem() {
   }
   view.state.change('item', makeId('i'), newItemFields(name));
   ui.addName.value = '';
+  paintSuggestions();
   changed();
 }
 

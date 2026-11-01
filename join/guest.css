@@ -15,7 +15,7 @@
   --radius: 18px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #141a17;
     --surface: #1d2622;
     --ink: #eef3ef;
@@ -29,6 +29,24 @@
     --warn-ink: #f0c987;
     --positive: #77d19b;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #141a17;
+  --surface: #1d2622;
+  --ink: #eef3ef;
+  --muted: #9fb0a7;
+  --line: #2f3d37;
+  --brand: #8cc9ad;
+  --on-brand: #0f1f18;
+  --soft: #23332c;
+  --highlight: #f2b84b;
+  --warn-bg: #3a2c15;
+  --warn-ink: #f0c987;
+  --positive: #77d19b;
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 * {
   box-sizing: border-box;
@@ -76,6 +94,33 @@ p {
   gap: 8px;
   color: var(--muted);
   font-size: 0.9rem;
+}
+.theme {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--soft);
+  color: var(--ink);
+}
+.addblock {
+  display: grid;
+  gap: 8px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chips:empty {
+  display: none;
+}
+.chip {
+  min-height: 40px;
+  padding: 0 14px;
+  font-weight: 500;
+  background: var(--soft);
+  color: var(--ink);
 }
 .dot {
   width: 10px;
